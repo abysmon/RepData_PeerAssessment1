@@ -1,25 +1,180 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+#### Title: "Reproducible Research: Human Activity monitoring Project"
+author: "Kay Dee"
+date: "Thursday, February 12, 2015"
+output: html_document
 ---
 
+### Reproducible Research: Human Activity monitoring Project
+##### Author: "Kay Dee"
+##### Date: "Thursday, February 12, 2015"
 
-## Loading and preprocessing the data
+***
+#### Background 
+
+This project makes use of data from a personal activity monitoring device. The device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+***
+#### About the Data
+
+The data for can be downloaded from [here](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+
+The variables included in this dataset are:
+  
+  1. steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+  2. date: The date on which the measurement was taken in YYYY-MM-DD format
+  3. interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+***
+#### Loading and preprocessing the data
+
+```{r, eval=F}
+url = 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'
+download.file(url, 'activity.zip')
+fname = unzip('activity.zip', list = T)$Name
+data = read.csv(fname, stringsAsFactors = F)
+```
+
+```{r, echo=F, message=F}
+data = read.csv('activity.csv', stringsAsFactors = F)
+```
 
 
+***
+#### What is mean total number of steps taken per day?
 
-## What is mean total number of steps taken per day?
+```{r, echo=T, message=F}
+require(dplyr)
+daily = data %>% 
+          group_by(date) %>% 
+          summarize(sum(steps))
 
+daily = as.data.frame(daily)
+daily = daily[complete.cases(daily), ]
+colnames(daily)[2] = 'Total.Steps'
+```
 
+###### Distribution of total number of steps walked on daily basis
 
-## What is the average daily activity pattern?
+```{r, echo=T, message=F, fig.height=5, fig.width=5}
+require(ggplot2)
+ggplot(daily, aes(date)) + 
+  geom_histogram(aes(Total.Steps), stat = 'bin', 
+                 fill = 'lightblue4', color = 'white') + 
+  theme_bw()
+```
 
+###### Average of total steps walked on daily basis is `r mean(daily[ ,2])` 
+###### Median of total steps walked on daily basis is `r median(daily[ ,2])`
 
+***
+#### What is the average daily activity pattern?
 
-## Imputing missing values
+```{r, echo=T, message=F, fig.height=5, fig.width=5}
+require(dplyr)
+require(ggplot2)
+stepwise = data %>% 
+            group_by(interval) %>% 
+            summarize(mean(steps, na.rm = T))
 
+colnames(stepwise)[2] = 'Avg.Steps'
+stepwise = as.data.frame(stepwise)
+ggplot(stepwise, aes(x = interval, y = Avg.Steps, color = 'red')) + 
+  geom_line() + theme_bw() + guides(color = F)
+```
 
+###### The 5-min interval that has the maximum number of steps on average across all the days, starts from
 
-## Are there differences in activity patterns between weekdays and weekends?
+```{r, echo=F, message=F}
+tmax = sprintf(fmt = "%04d", stepwise[which.max(stepwise[ ,2]), 1])
+```
+
+```{r, echo=T, message=F}
+paste0(substr(tmax,1,2),":",substr(tmax,3,4))
+```
+
+***
+#### Imputing missing values
+
+###### Total number of missing values in the dataset `r sum(is.na(data))`
+
+###### Filling in the missing values in the dataset with the median for the corresponding 5-minute interval
+
+```{r, echo=T, message=F}
+require(plyr)
+fdata = ddply(data, 
+              .(interval), 
+              transform, 
+              steps = ifelse(is.na(steps), median(steps, na.rm = T), steps))
+detach("package:plyr", unload=TRUE)
+fdata = as.data.frame(fdata)
+# fdata is the dataset with the missing values filled
+```
+
+###### Total steps walked for each day
+
+```{r, echo=T, message=F}
+require(dplyr)
+fdaily = fdata %>% 
+  group_by(date) %>% 
+  summarize(sum(steps))
+
+fdaily = as.data.frame(fdaily)
+colnames(fdaily)[2] = 'Total.Steps'
+```
+
+###### Distribution of total steps taken each day, of the missing values filled dataset
+```{r, echo=T, message=F, fig.height=5, fig.width=5}
+require(ggplot2)
+ggplot(fdaily, aes(date)) + 
+  geom_histogram(aes(Total.Steps), stat = 'bin', 
+                 fill = 'firebrick1', color = 'white') + 
+  theme_bw() + ylab('Daily total steps taken') + xlab('5min periods')
+```
+
+###### Average of total steps walked on daily basis is `r mean(fdaily[ ,2])`.
+
+###### Median of total steps walked on daily basis is `r median(fdaily[ ,2])`.
+
+With missing values imputed the mean and median for the dataset comes down or with missing values, mean/median gets over-estimated.
+
+***
+#### Are there differences in activity patterns between weekdays and weekends?
+
+###### Create a separate variable for indicating weekday/weekends
+
+```{r, echo=T, message=F}
+fdata.ts = fdata
+fdata.ts[ ,2] = as.POSIXct(strptime(x = fdata.ts[ ,2], format = "%Y-%m-%d"))
+fdata.ts$wday = weekdays(fdata.ts[ ,2])
+
+fdata.ts$wdayflag = 'Weekday'
+fdata.ts[(fdata.ts$wday=="Sunday")|(fdata.ts$wday=="Saturday"), 5] = 'Weekend'
+fdata.ts$wdayflag = factor(fdata.ts$wdayflag)
+fdata.ts = fdata.ts[ ,-4]
+```
+
+###### Average steps walked for each 5-minute interval weekday/weekends wise 
+
+```{r, echo=T, message=F}
+fweekday = fdata.ts %>% 
+  group_by(interval, wdayflag) %>% 
+  summarize(mean(steps))
+
+colnames(fweekday)[3] = 'AvgSteps'
+fweekday = as.data.frame(fweekday)
+```
+
+Plot of average number of steps the 5-minute interval vs average steps taken over weekdays/weekends
+
+```{r, echo=T, message=F, fig.height=5, fig.width=5}
+require(ggplot2)
+ggplot(fweekday, aes(x = interval, y = AvgSteps, color = wdayflag)) + 
+  geom_line() + 
+  theme_bw() + 
+  facet_wrap(~wdayflag, nrow = 2)
+```
+
+***
