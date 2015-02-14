@@ -1,5 +1,4 @@
 ---
-#### Title: "Reproducible Research: Human Activity monitoring Project"
 author: "Kay Dee"
 date: "Thursday, February 12, 2015"
 output: html_document
@@ -37,7 +36,11 @@ fname = unzip('activity.zip', list = T)$Name
 data = read.csv(fname, stringsAsFactors = F)
 ```
 
-```{r, echo=F, message=F}
+```{r, echo=F, message=F,error=T}
+require(plyr)
+require(dplyr)
+require(ggplot2)
+require(scales)
 data = read.csv('activity.csv', stringsAsFactors = F)
 ```
 
@@ -46,20 +49,17 @@ data = read.csv('activity.csv', stringsAsFactors = F)
 #### What is mean total number of steps taken per day?
 
 ```{r, echo=T, message=F}
-require(dplyr)
 daily = data %>% 
           group_by(date) %>% 
-          summarize(sum(steps))
+          summarize(Total.Steps = sum(steps))
 
 daily = as.data.frame(daily)
 daily = daily[complete.cases(daily), ]
-colnames(daily)[2] = 'Total.Steps'
 ```
 
 ###### Distribution of total number of steps walked on daily basis
 
 ```{r, echo=T, message=F, fig.height=5, fig.width=5}
-require(ggplot2)
 ggplot(daily, aes(date)) + 
   geom_histogram(aes(Total.Steps), stat = 'bin', 
                  fill = 'lightblue4', color = 'white') + 
@@ -73,13 +73,10 @@ ggplot(daily, aes(date)) +
 #### What is the average daily activity pattern?
 
 ```{r, echo=T, message=F, fig.height=5, fig.width=5}
-require(dplyr)
-require(ggplot2)
 stepwise = data %>% 
             group_by(interval) %>% 
-            summarize(mean(steps, na.rm = T))
+            summarize(Avg.Steps = mean(steps, na.rm = T))
 
-colnames(stepwise)[2] = 'Avg.Steps'
 stepwise = as.data.frame(stepwise)
 ggplot(stepwise, aes(x = interval, y = Avg.Steps, color = 'red')) + 
   geom_line() + theme_bw() + guides(color = F)
@@ -103,12 +100,10 @@ paste0(substr(tmax,1,2),":",substr(tmax,3,4))
 ###### Filling in the missing values in the dataset with the median for the corresponding 5-minute interval
 
 ```{r, echo=T, message=F}
-require(plyr)
 fdata = ddply(data, 
               .(interval), 
               transform, 
               steps = ifelse(is.na(steps), median(steps, na.rm = T), steps))
-detach("package:plyr", unload=TRUE)
 fdata = as.data.frame(fdata)
 # fdata is the dataset with the missing values filled
 ```
@@ -116,18 +111,15 @@ fdata = as.data.frame(fdata)
 ###### Total steps walked for each day
 
 ```{r, echo=T, message=F}
-require(dplyr)
 fdaily = fdata %>% 
   group_by(date) %>% 
-  summarize(sum(steps))
+  summarize(Total.Steps = sum(steps))
 
 fdaily = as.data.frame(fdaily)
-colnames(fdaily)[2] = 'Total.Steps'
 ```
 
 ###### Distribution of total steps taken each day, of the missing values filled dataset
 ```{r, echo=T, message=F, fig.height=5, fig.width=5}
-require(ggplot2)
 ggplot(fdaily, aes(date)) + 
   geom_histogram(aes(Total.Steps), stat = 'bin', 
                  fill = 'firebrick1', color = 'white') + 
@@ -161,19 +153,24 @@ fdata.ts = fdata.ts[ ,-4]
 ```{r, echo=T, message=F}
 fweekday = fdata.ts %>% 
   group_by(interval, wdayflag) %>% 
-  summarize(mean(steps))
+  summarize(AvgSteps = mean(steps))
 
-colnames(fweekday)[3] = 'AvgSteps'
 fweekday = as.data.frame(fweekday)
 ```
 
 Plot of average number of steps the 5-minute interval vs average steps taken over weekdays/weekends
 
-```{r, echo=T, message=F, fig.height=5, fig.width=5}
-require(ggplot2)
-ggplot(fweekday, aes(x = interval, y = AvgSteps, color = wdayflag)) + 
+```{r, echo=T, message=F, fig.height=6, fig.width=9.5}
+fweekday$hours = as.POSIXct(strptime(sprintf("%04d",fweekday$interval), '%H%M'))
+fweekday$hours = as.numeric(fweekday$hours - trunc(fweekday$hours, "days"))
+class(fweekday$hours) = "POSIXct"
+
+ggplot(fweekday, aes(x = hours, y = AvgSteps, color = wdayflag)) + 
   geom_line() + 
   theme_bw() + 
+  scale_x_datetime(breaks = date_breaks("2 hour"), 
+                   labels = date_format("%H:%M")) +
+  guides(color = FALSE) + 
   facet_wrap(~wdayflag, nrow = 2)
 ```
 
