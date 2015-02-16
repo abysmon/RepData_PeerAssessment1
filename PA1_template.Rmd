@@ -1,20 +1,21 @@
 ---
+title: "Reproducible Research: Human Activity monitoring Project"
 author: "Kay Dee"
 date: "Thursday, February 12, 2015"
-output: html_document
+output:
+  html_document:
+    highlight: kate
+    theme: flatly
+    toc: yes
 ---
 
-### Reproducible Research: Human Activity monitoring Project
-##### Author: "Kay Dee"
-##### Date: "Thursday, February 12, 2015"
-
 ***
-#### Background 
+### Background 
 
 This project makes use of data from a personal activity monitoring device. The device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
 ***
-#### About the Data
+### About the Data
 
 The data for can be downloaded from [here](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
 
@@ -27,7 +28,7 @@ The variables included in this dataset are:
 The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
 
 ***
-#### Loading and preprocessing the data
+### Loading and preprocessing the data
 
 ```{r, eval=F}
 url = 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'
@@ -46,7 +47,7 @@ data = read.csv('activity.csv', stringsAsFactors = F)
 
 
 ***
-#### What is mean total number of steps taken per day?
+### Central measure of total number of steps taken per day
 
 ```{r, echo=T, message=F}
 daily = data %>% 
@@ -70,7 +71,7 @@ ggplot(daily, aes(date)) +
 ###### Median of total steps walked on daily basis is `r median(daily[ ,2])`
 
 ***
-#### What is the average daily activity pattern?
+### Average daily activity pattern
 
 ```{r, echo=T, message=F, fig.height=5, fig.width=5}
 stepwise = data %>% 
@@ -93,7 +94,7 @@ paste0(substr(tmax,1,2),":",substr(tmax,3,4))
 ```
 
 ***
-#### Imputing missing values
+### Imputing missing values
 
 ###### Total number of missing values in the dataset `r sum(is.na(data))`
 
@@ -130,12 +131,12 @@ ggplot(fdaily, aes(date)) +
 
 ###### Median of total steps walked on daily basis is `r median(fdaily[ ,2])`.
 
-With missing values imputed the mean and median for the dataset comes down or with missing values, mean/median gets over-estimated.
+With missing values imputed the mean and median for the dataset comes down or in another words, with missing values, mean/median gets over-estimated.
 
 ***
-#### Are there differences in activity patterns between weekdays and weekends?
+### Differences in activity patterns between weekdays and weekends?
 
-###### Create a separate variable for indicating weekday/weekends
+###### Creating a separate variable for indicating weekday/weekends
 
 ```{r, echo=T, message=F}
 fdata.ts = fdata
@@ -158,7 +159,7 @@ fweekday = fdata.ts %>%
 fweekday = as.data.frame(fweekday)
 ```
 
-Plot of average number of steps the 5-minute interval vs average steps taken over weekdays/weekends
+Plot of average steps walked for each 5-minute interval being split over weekdays vs weekends
 
 ```{r, echo=T, message=F, fig.height=6, fig.width=9.5}
 fweekday$hours = as.POSIXct(strptime(sprintf("%04d",fweekday$interval), '%H%M'))
