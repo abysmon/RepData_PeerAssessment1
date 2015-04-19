@@ -146,10 +146,10 @@ fdaily = fdata %>%
 ## Distribution of total steps taken each day, of the missing values filled dataset
 
 ```r
-ggplot(fdaily, aes(date)) + 
-  geom_histogram(aes(Total.Steps), stat = 'bin', 
-                 fill = 'firebrick1', color = 'white') + 
-  theme_bw() + ylab('Daily total steps taken') + xlab('5min periods')
+ggplot(fdaily, aes(x = Total.Steps)) + 
+  geom_histogram(stat = 'bin', binwidth = 2000, fill = 'dodgerblue2', col = 'black') + 
+  theme_bw() + ggtitle('Histogram of Total steps walked') + 
+  xlab('Total steps walked on a day') + ylab('Frequency')
 ```
 
 ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png) 

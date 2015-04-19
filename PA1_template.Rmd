@@ -63,7 +63,7 @@ daily = activity %>%
 
 #### Distribution of total number of steps walked on daily basis
 
-```{r, echo=T, message=F, fig.height=5, fig.width=5}
+```{r, echo=T, message=F}
 ggplot(daily, aes(x = Total.Steps)) + 
   geom_histogram(fill = 'burlywood', col = 'black', binwidth = 2000) + 
   theme_bw() + ggtitle('Histogram of Total steps walked') + 
@@ -138,11 +138,11 @@ fdaily = fdata %>%
 ```
 
 ## Distribution of total steps taken each day, of the missing values filled dataset
-```{r, echo=T, message=F, fig.height=4, fig.width=9.5}
-ggplot(fdaily, aes(date)) + 
-  geom_histogram(aes(Total.Steps), stat = 'bin', 
-                 fill = 'firebrick1', color = 'white') + 
-  theme_bw() + ylab('Daily total steps taken') + xlab('5min periods')
+```{r, echo=T, message=F}
+ggplot(fdaily, aes(x = Total.Steps)) + 
+  geom_histogram(stat = 'bin', binwidth = 2000, fill = 'dodgerblue2', col = 'black') + 
+  theme_bw() + ggtitle('Histogram of Total steps walked') + 
+  xlab('Total steps walked on a day') + ylab('Frequency')
 ```
 
 #### Total steps walked on daily basis has 
